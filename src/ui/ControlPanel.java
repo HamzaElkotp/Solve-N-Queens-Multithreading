@@ -28,7 +28,7 @@ public class ControlPanel extends JPanel {
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
         add(new JLabel("Grid Size (N):"));
-        nInput = new JSpinner(new SpinnerNumberModel(8, 4, 20, 1));
+        nInput = new JSpinner(new SpinnerNumberModel(8, 4, 100, 1));
         nInput.setPreferredSize(new Dimension(60, 25));
         add(nInput);
 
