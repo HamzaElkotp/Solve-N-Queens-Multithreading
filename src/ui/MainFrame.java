@@ -1,9 +1,15 @@
 package ui;
 
+import controller.SnapshotConsumer;
+import controller.ThreadManager;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class MainFrame extends JFrame {
+
+    private ThreadManager threadManager;
+    private SnapshotConsumer snapshotConsumer;
 
     private BoardPanel boardPanel;
     private ControlPanel controlPanel;
@@ -22,9 +28,22 @@ public class MainFrame extends JFrame {
         add(controlPanel, BorderLayout.NORTH);
         add(boardPanel, BorderLayout.CENTER);
         add(legendPanel, BorderLayout.EAST);
+
+        int numThreads = Runtime.getRuntime().availableProcessors();
+        threadManager = new ThreadManager(numThreads);
+
+        snapshotConsumer = new SnapshotConsumer(
+                boardPanel,
+                threadManager.getSnapshotQueue(),
+                threadManager.getThreadColorMap()
+        );
+
+        controlPanel.setThreadManager(threadManager);
+        controlPanel.setSnapshotConsumer(snapshotConsumer);
+
+        legendPanel.setThreadColors(threadManager.getThreadColorMap());
     }
 
-    // Called later when threads are created
     public void updateThreadColors(java.util.Map<Integer, Color> colorMap) {
         legendPanel.setThreadColors(colorMap);
     }

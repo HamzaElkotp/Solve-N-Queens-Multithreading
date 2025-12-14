@@ -1,9 +1,15 @@
 package ui;
 
+import controller.SnapshotConsumer;
+import controller.ThreadManager;
+
 import javax.swing.*;
 import java.awt.*;
 
 public class ControlPanel extends JPanel {
+
+    private ThreadManager threadManager;
+    private SnapshotConsumer snapshotConsumer;
 
     private JTextField nInput;
     private JButton startBtn;
@@ -31,14 +37,32 @@ public class ControlPanel extends JPanel {
                 int N = Integer.parseInt(nInput.getText());
                 boardPanel.setBoardSize(N);
                 boardPanel.repaint();
+
+                if (threadManager != null && snapshotConsumer != null) {
+                    snapshotConsumer.startConsuming();
+                    threadManager.startAll(N);
+                } else {
+                    JOptionPane.showMessageDialog(this, "ThreadManager/SnapshotConsumer not initialized!");
+                }
+
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Invalid N");
             }
         });
 
         stopBtn.addActionListener(e -> {
-            // Will be connected to ThreadManager.stopAll()
-            JOptionPane.showMessageDialog(this, "Stop pressed — implement later.");
+            if (threadManager != null && snapshotConsumer != null) {
+                threadManager.stopAll();
+                snapshotConsumer.stopConsuming();
+            }
         });
+    }
+
+    public void setThreadManager(ThreadManager manager) {
+        this.threadManager = manager;
+    }
+
+    public void setSnapshotConsumer(SnapshotConsumer consumer) {
+        this.snapshotConsumer = consumer;
     }
 }
