@@ -15,7 +15,8 @@ public class QueenWorker implements Runnable {
     private final BlockingQueue<Snapshot> queue;
 
     private static final int START_COL = 0;
-    private static final int SNAPSHOT_INTERVAL = 50;
+    private static final int SNAPSHOT_INTERVAL = 1; // Emit snapshot after every step
+    private static final int DELAY_MS = 100; // Delay between operations in milliseconds
 
     public QueenWorker(int threadId,
                        int startRow,
@@ -69,12 +70,30 @@ public class QueenWorker implements Runnable {
 
                 int prevRow = findQueenRow(queens, col);
                 queens[prevRow] = -1;
+                
+                // Emit snapshot after backtracking
+                emitSnapshot(queens, "BACKTRACKING");
+                
+                // Add delay to slow down operations
+                try {
+                    Thread.sleep(DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
                 continue;
             }
 
             steps++;
-            if (steps % SNAPSHOT_INTERVAL == 0) {
-                emitSnapshot(queens, "SEARCHING");
+            // Emit snapshot after every step to see progress
+            emitSnapshot(queens, "SEARCHING");
+            
+            // Add delay to slow down operations
+            try {
+                Thread.sleep(DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
             }
 
             if (col == N) {

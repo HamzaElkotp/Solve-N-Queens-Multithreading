@@ -13,7 +13,6 @@ public class ControlPanel extends JPanel {
     private SnapshotConsumer snapshotConsumer;
 
     private JSpinner nInput;
-    private JSpinner threadsInput;
     private JButton runBtn;
     private JButton stopBtn;
 
@@ -33,15 +32,6 @@ public class ControlPanel extends JPanel {
         nInput.setPreferredSize(new Dimension(60, 25));
         add(nInput);
 
-        add(new JLabel("  Number of Threads:"));
-        threadsInput = new JSpinner(new SpinnerNumberModel(
-                Runtime.getRuntime().availableProcessors(), 
-                1, 
-                20, 
-                1));
-        threadsInput.setPreferredSize(new Dimension(60, 25));
-        add(threadsInput);
-
         runBtn = new JButton("Run");
         stopBtn = new JButton("Stop");
         stopBtn.setEnabled(false);
@@ -52,14 +42,13 @@ public class ControlPanel extends JPanel {
         runBtn.addActionListener(e -> {
             try {
                 int N = (Integer) nInput.getValue();
-                int numThreads = (Integer) threadsInput.getValue();
                 
                 // Set board size first
                 boardPanel.setBoardSize(N);
                 boardPanel.clearBoard();
                 
-                // Initialize thread manager with selected number of threads
-                mainFrame.initializeThreadManager(numThreads);
+                // Initialize thread manager with N threads (same as grid size)
+                mainFrame.initializeThreadManager(N);
                 
                 // Wait a bit for initialization
                 SwingUtilities.invokeLater(() -> {
