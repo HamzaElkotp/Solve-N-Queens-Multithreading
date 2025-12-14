@@ -81,7 +81,8 @@ public class QueenWorker implements Runnable {
             // If we couldn't place a queen, we need to backtrack
             if (!placed) {
                 // Keep backtracking until we find a column where we can try an alternative
-                while (col > START_COL) {
+                // Never backtrack past column 1 (START_COL + 1) - the starting queen must stay
+                while (col > START_COL + 1) {
                     col--; // Move back to previous column
 
                     // Find and remove the queen in the current column
@@ -135,10 +136,35 @@ public class QueenWorker implements Runnable {
                     // Otherwise, continue backtracking (the while loop will continue)
                 }
                 
-                // If we've backtracked all the way to the start column, terminate
-                if (col == START_COL) {
-                    emitSnapshot(queens, "TERMINATED");
-                    return;
+                // If we've backtracked to column 1 (START_COL + 1), try one more time to place a queen there
+                // If we can't, we've exhausted all possibilities from the starting position
+                if (col == START_COL + 1) {
+                    // Try to place a queen in column 1 one more time
+                    boolean canPlaceInCol1 = false;
+                    for (int row = 0; row < N; row++) {
+                        if (isSafe(queens, row, col)) {
+                            queens[row] = col;
+                            canPlaceInCol1 = true;
+                            emitSnapshot(queens, "SEARCHING");
+                            try {
+                                Thread.sleep(DELAY_MS);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
+                            col++;
+                            break;
+                        }
+                    }
+                    
+                    // If we still can't place in column 1, terminate
+                    // The starting queen at (startRow, START_COL) must remain visible
+                    if (!canPlaceInCol1) {
+                        // Make sure the starting queen is still in the array
+                        queens[startRow] = START_COL;
+                        emitSnapshot(queens, "TERMINATED");
+                        return;
+                    }
                 }
             }
         }
