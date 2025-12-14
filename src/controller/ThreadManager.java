@@ -8,9 +8,11 @@ import threads.QueenWorker;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ThreadManager {
@@ -21,16 +23,26 @@ public class ThreadManager {
     public AtomicBoolean stopFlag;
     public HashMap<Integer, Color> threadColorMap;
 
+    private Color generateDistinctColor(int threadId) {
+        float hue = (threadId * 1.0f / this.numThreads);
+        float saturation = 0.9f;
+        float brightness = 0.9f;
+        return Color.getHSBColor(hue, saturation, brightness);
+    }
+
     public ThreadManager(int numThreads) {
         this.numThreads = numThreads;
         this.threads = new ArrayList<>();
         this.stopFlag = new AtomicBoolean(false);
-        this.snapshotQueue = new ArrayBlockingQueue<>(numThreads);
-        this.threadColorMap = new HashMap<>();
+        this.snapshotQueue = new LinkedBlockingQueue<>(numThreads);
+        this.threadColorMap = new HashMap<Integer, Color>();
+        for (int i = 0; i < numThreads; i++) {
+            threadColorMap.put(i, generateDistinctColor(i));
+        }
     }
 
     public void startAll(int N) {
-        this.stopFlag.set(false); // Signal that threads will start
+        this.stopFlag.set(false);
 
         for (int thId = 0; thId < numThreads; thId++) {
             int strt_row = thId;
@@ -45,7 +57,7 @@ public class ThreadManager {
     }
 
     public void stopAll() {
-        this.stopFlag.set(false);
+        this.stopFlag.set(true);
 
         for(Thread thread : threads){
             thread.interrupt();
@@ -55,11 +67,11 @@ public class ThreadManager {
         snapshotQueue.clear();
     }
 
-    public java.util.Map<Integer, Color> getThreadColorMap() {
+    public HashMap<Integer, Color> getThreadColorMap() {
         return threadColorMap;
     }
 
-    public java.util.concurrent.BlockingQueue<Snapshot> getSnapshotQueue() {
+    public BlockingQueue<Snapshot> getSnapshotQueue() {
         return snapshotQueue;
     }
 }
