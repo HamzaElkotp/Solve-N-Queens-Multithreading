@@ -45,6 +45,7 @@ public class QueenWorker implements Runnable {
         emitSnapshot(queens, "INITIAL");
 
         int col = START_COL + 1;
+        boolean isFirstTimeAtCol1 = true; // Track if this is the first time visiting column 1
 
         while (!stopFlag.get() && !Thread.currentThread().isInterrupted()) {
 
@@ -82,6 +83,8 @@ public class QueenWorker implements Runnable {
             if (!placed) {
                 // Keep backtracking until we find a column where we can try an alternative
                 // Never backtrack past column 1 (START_COL + 1) - the starting queen must stay
+                boolean foundAlternative = false;
+                
                 while (col > START_COL + 1) {
                     col--; // Move back to previous column
 
@@ -107,7 +110,6 @@ public class QueenWorker implements Runnable {
                     
                     // Try to find the next safe position in this column
                     // Start searching from the row after the one we just removed
-                    boolean foundAlternative = false;
                     for (int row = prevRow + 1; row < N; row++) {
                         if (isSafe(queens, row, col)) {
                             queens[row] = col;
@@ -136,10 +138,37 @@ public class QueenWorker implements Runnable {
                     // Otherwise, continue backtracking (the while loop will continue)
                 }
                 
-                // If we've backtracked to column 1 (START_COL + 1), try one more time to place a queen there
-                // If we can't, we've exhausted all possibilities from the starting position
-                if (col == START_COL + 1) {
-                    // Try to place a queen in column 1 one more time
+                // If we've backtracked to column 1 (START_COL + 1) and haven't found an alternative
+                if (col == START_COL + 1 && !foundAlternative) {
+                    // Check if this is the second time visiting column 1
+                    if (!isFirstTimeAtCol1) {
+                        // Second time at column 1 - we've exhausted all possibilities
+                        // Clear all queens except the starting one
+                        Arrays.fill(queens, -1);
+                        queens[startRow] = START_COL;
+                        emitSnapshot(queens, "TERMINATED");
+                        return; // Exit the thread - no more attempts
+                    }
+                    
+                    // First time at column 1 - try to place a queen here
+                    isFirstTimeAtCol1 = false;
+                    
+                    // Check if there's any queen already in column 1
+                    int existingRow = findQueenRow(queens, col);
+                    
+                    // If there's a queen in column 1, remove it first
+                    if (existingRow >= 0) {
+                        queens[existingRow] = -1;
+                        emitSnapshot(queens, "BACKTRACKING");
+                        try {
+                            Thread.sleep(DELAY_MS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
+                    
+                    // Try to place a queen in column 1, starting from row 0
                     boolean canPlaceInCol1 = false;
                     for (int row = 0; row < N; row++) {
                         if (isSafe(queens, row, col)) {
@@ -157,14 +186,8 @@ public class QueenWorker implements Runnable {
                         }
                     }
                     
-                    // If we still can't place in column 1, terminate
-                    // The starting queen at (startRow, START_COL) must remain visible
-                    if (!canPlaceInCol1) {
-                        // Make sure the starting queen is still in the array
-                        queens[startRow] = START_COL;
-                        emitSnapshot(queens, "TERMINATED");
-                        return;
-                    }
+                    // If we can't place in column 1 on first visit, continue to next iteration
+                    // which will backtrack again and eventually return to column 1 (second time)
                 }
             }
         }
