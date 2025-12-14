@@ -1,15 +1,20 @@
 package ui;
 
+import model.Snapshot;
+
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BoardPanel extends JPanel {
 
     private int N = 8;
 
-    // Later this will be fed by SnapshotConsumer
+    private Map<Integer, Snapshot> latestStates = new HashMap<>();
+    private Map<Integer, Color> threadColorMap = new HashMap<>();
+
     private int[] queenPositions = null;
-    private java.util.Map<Integer, Color> threadColorMap = new java.util.HashMap<>();
 
     public BoardPanel() {
         setPreferredSize(new Dimension(600, 600));
@@ -17,11 +22,12 @@ public class BoardPanel extends JPanel {
 
     public void setBoardSize(int n) {
         this.N = n;
+        repaint();
     }
 
-    public void updateBoardState(int[] queens, java.util.Map<Integer, Color> colorMap) {
-        this.queenPositions = queens;
-        this.threadColorMap = colorMap;
+    public void updateBoardState(Map<Integer, Snapshot> latestStates, Map<Integer, Color> threadColors) {
+        this.latestStates = new HashMap<>(latestStates);
+        this.threadColorMap = threadColors;
         repaint();
     }
 
@@ -37,25 +43,35 @@ public class BoardPanel extends JPanel {
         for (int r = 0; r < N; r++) {
             for (int c = 0; c < N; c++) {
                 if ((r + c) % 2 == 0)
-                    g.setColor(new Color(240, 240, 240));
+                    g.setColor(new Color(18, 26, 33));
                 else
-                    g.setColor(new Color(200, 200, 200));
+                    g.setColor(new Color(64, 64, 64));
                 g.fillRect(c * cell, r * cell, cell, cell);
             }
         }
 
-        // draw queens (when data is available)
-        if (queenPositions != null) {
-            for (int row = 0; row < N; row++) {
-                int col = queenPositions[row];
+        for (Map.Entry<Integer, Snapshot> entry : latestStates.entrySet()) {
+            int threadId = entry.getKey();
+            Snapshot snapshot = entry.getValue();
+            int[] queens = snapshot.getQueens();
+
+            Color color = threadColorMap.getOrDefault(threadId, Color.BLACK);
+            g.setColor(color);
+
+            for (int row = 0; row < queens.length; row++) {
+                int col = queens[row];
                 if (col >= 0) {
-                    Color color = threadColorMap.getOrDefault(row, Color.BLACK);
-                    g.setColor(color);
                     int x = col * cell + cell / 4;
                     int y = row * cell + cell / 4;
                     g.fillOval(x, y, cell / 2, cell / 2);
                 }
             }
         }
+    }
+
+    public void updateBoard(HashMap<Integer, Snapshot> latestStates, HashMap<Integer, Color> threadColors) {
+        this.latestStates = new HashMap<Integer, Snapshot>(latestStates);
+        this.threadColorMap = threadColors;
+        repaint();
     }
 }
