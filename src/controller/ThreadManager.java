@@ -42,7 +42,12 @@ public class ThreadManager {
     }
 
     public void startAll(int N) {
+        // Clear any existing threads first
+        stopAll();
+        
         this.stopFlag.set(false);
+        this.threads.clear();
+        this.snapshotQueue.clear();
 
         for (int thId = 0; thId < numThreads; thId++) {
             int strt_row = thId;

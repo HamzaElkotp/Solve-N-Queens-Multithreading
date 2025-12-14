@@ -22,16 +22,24 @@ public class MainFrame extends JFrame {
         setLayout(new BorderLayout());
 
         boardPanel = new BoardPanel();
-        controlPanel = new ControlPanel(boardPanel);
         legendPanel = new ColorLegendPanel();
+        controlPanel = new ControlPanel(boardPanel, legendPanel, this);
 
         add(controlPanel, BorderLayout.NORTH);
         add(boardPanel, BorderLayout.CENTER);
         add(legendPanel, BorderLayout.EAST);
+    }
 
-        int numThreads = Runtime.getRuntime().availableProcessors();
+    public void initializeThreadManager(int numThreads) {
+        // Stop and cleanup existing threads if any
+        if (threadManager != null) {
+            threadManager.stopAll();
+        }
+        if (snapshotConsumer != null) {
+            snapshotConsumer.stopConsuming();
+        }
+
         threadManager = new ThreadManager(numThreads);
-
         snapshotConsumer = new SnapshotConsumer(
                 boardPanel,
                 threadManager.getSnapshotQueue(),
@@ -40,7 +48,6 @@ public class MainFrame extends JFrame {
 
         controlPanel.setThreadManager(threadManager);
         controlPanel.setSnapshotConsumer(snapshotConsumer);
-
         legendPanel.setThreadColors(threadManager.getThreadColorMap());
     }
 

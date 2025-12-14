@@ -39,6 +39,9 @@ public class QueenWorker implements Runnable {
 
         // Initial placement
         queens[startRow] = START_COL;
+        
+        // Emit initial snapshot
+        emitSnapshot(queens, "INITIAL");
 
         int col = START_COL + 1;
         int steps = 0;

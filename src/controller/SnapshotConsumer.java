@@ -28,7 +28,11 @@ public class SnapshotConsumer {
     }
 
     public void startConsuming() {
+        // Stop any existing consumer first
+        stopConsuming();
+        
         this.is_Running.set(true);
+        latestStates.clear();
 
         consumerThread = new Thread(() -> {
             try{
@@ -36,8 +40,12 @@ public class SnapshotConsumer {
                     Snapshot snapshot = queue.take(); // BLOCKING -> no busy waiting
                     latestStates.put(snapshot.getThreadId(), snapshot);
 
+                    // Create a copy for thread safety
+                    HashMap<Integer, Snapshot> statesCopy = new HashMap<>(latestStates);
+                    HashMap<Integer, Color> colorsCopy = new HashMap<>(threadColors);
+                    
                     SwingUtilities.invokeLater(() -> {
-                        boardPanel.updateBoard(latestStates, threadColors);
+                        boardPanel.updateBoard(statesCopy, colorsCopy);
                     });
                 }
             } catch(InterruptedException e) {
@@ -45,6 +53,7 @@ public class SnapshotConsumer {
             }
         });
 
+        consumerThread.setDaemon(true);
         consumerThread.start();
     }
 

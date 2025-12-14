@@ -2,6 +2,7 @@ package ui;
 
 import controller.SnapshotConsumer;
 import controller.ThreadManager;
+import ui.MainFrame;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,42 +12,68 @@ public class ControlPanel extends JPanel {
     private ThreadManager threadManager;
     private SnapshotConsumer snapshotConsumer;
 
-    private JTextField nInput;
-    private JButton startBtn;
+    private JSpinner nInput;
+    private JSpinner threadsInput;
+    private JButton runBtn;
     private JButton stopBtn;
 
     private BoardPanel boardPanel;
+    private ColorLegendPanel legendPanel;
+    private MainFrame mainFrame;
 
-    public ControlPanel(BoardPanel panel) {
+    public ControlPanel(BoardPanel panel, ColorLegendPanel legendPanel, MainFrame mainFrame) {
         this.boardPanel = panel;
+        this.legendPanel = legendPanel;
+        this.mainFrame = mainFrame;
 
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        add(new JLabel("N:"));
-        nInput = new JTextField("8", 5);
+        add(new JLabel("Grid Size (N):"));
+        nInput = new JSpinner(new SpinnerNumberModel(8, 4, 20, 1));
+        nInput.setPreferredSize(new Dimension(60, 25));
         add(nInput);
 
-        startBtn = new JButton("Start");
-        stopBtn = new JButton("Stop");
+        add(new JLabel("  Number of Threads:"));
+        threadsInput = new JSpinner(new SpinnerNumberModel(
+                Runtime.getRuntime().availableProcessors(), 
+                1, 
+                20, 
+                1));
+        threadsInput.setPreferredSize(new Dimension(60, 25));
+        add(threadsInput);
 
-        add(startBtn);
+        runBtn = new JButton("Run");
+        stopBtn = new JButton("Stop");
+        stopBtn.setEnabled(false);
+
+        add(runBtn);
         add(stopBtn);
 
-        startBtn.addActionListener(e -> {
+        runBtn.addActionListener(e -> {
             try {
-                int N = Integer.parseInt(nInput.getText());
+                int N = (Integer) nInput.getValue();
+                int numThreads = (Integer) threadsInput.getValue();
+                
+                // Set board size first
                 boardPanel.setBoardSize(N);
-                boardPanel.repaint();
-
-                if (threadManager != null && snapshotConsumer != null) {
-                    snapshotConsumer.startConsuming();
-                    threadManager.startAll(N);
-                } else {
-                    JOptionPane.showMessageDialog(this, "ThreadManager/SnapshotConsumer not initialized!");
-                }
+                boardPanel.clearBoard();
+                
+                // Initialize thread manager with selected number of threads
+                mainFrame.initializeThreadManager(numThreads);
+                
+                // Wait a bit for initialization
+                SwingUtilities.invokeLater(() -> {
+                    if (threadManager != null && snapshotConsumer != null) {
+                        snapshotConsumer.startConsuming();
+                        threadManager.startAll(N);
+                        runBtn.setEnabled(false);
+                        stopBtn.setEnabled(true);
+                    }
+                });
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Invalid N");
+                JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage());
+                ex.printStackTrace();
             }
         });
 
@@ -54,6 +81,9 @@ public class ControlPanel extends JPanel {
             if (threadManager != null && snapshotConsumer != null) {
                 threadManager.stopAll();
                 snapshotConsumer.stopConsuming();
+                boardPanel.clearBoard();
+                runBtn.setEnabled(true);
+                stopBtn.setEnabled(false);
             }
         });
     }
